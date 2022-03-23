@@ -33,6 +33,8 @@ const Search = () => {
   useEffect(() => {
     if (keywords && keywords.length) {
       searchUsers();
+    } else {
+      setUsers([]);
     }
   }, [keywords]);
 

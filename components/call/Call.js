@@ -14,7 +14,7 @@ const JoinCall = ({route, navigation}) => {
 
   const startCall = () => {
     const sessionID = room.id;
-    const audioOnly = false;
+    const audioOnly = true;
     const defaultLayout = true;
     const callListener = new CometChat.OngoingCallListener({
       onUserListUpdated: (userList) => {},
