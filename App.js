@@ -10,13 +10,14 @@ import SignUp from './components/register/SignUp';
 import Home from './components/home/Home';
 import Search from './components/search/Search';
 import CreateRoom from './components/room/CreateRoom';
+import EditRoom from './components/room/EditRoom';
 import RoomDetail from './components/room/RoomDetail';
 import Call from './components/call/Call';
 import Notifications from './components/notifications/Notifications';
 
 import {cometChatConfig} from './env';
 
-import {showMessageWithActions} from './services/ui';
+import {showMessage, showMessageWithActions} from './services/ui';
 
 import Context from './context';
 
@@ -28,6 +29,7 @@ const Stack = createNativeStackNavigator();
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [roomDetail, setRoomDetail] = useState(null);
 
   const initCometChat = async () => {
     const appID = `${cometChatConfig.cometChatAppId}`;
@@ -87,13 +89,26 @@ const App = () => {
     setUser(null);
   };
 
-  const leaveRoom = (navigation) => () => {
+  const leaveRoom = (navigation) => async () => {
+    try {
+      await leaveCometChatGroup();
+    } catch (e) {
+      console.log(e);
+    }
     navigation.goBack();
+  };
+
+  const leaveCometChatGroup = async () => {
+    if (roomDetail && roomDetail.createdBy.email !== user.email) {
+      await CometChat.leaveGroup(roomDetail.id);
+    } else {
+      showMessage('Info', 'Owner cannot leave the room');
+    }
   };
 
   if (user) {
     return (
-      <Context.Provider value={{user, setUser}}>
+      <Context.Provider value={{user, setUser, roomDetail, setRoomDetail}}>
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen
@@ -134,6 +149,15 @@ const App = () => {
             <Stack.Screen
               name="Create Room"
               component={CreateRoom}
+              options={() => ({
+                headerStyle: {
+                  backgroundColor: '#F1EFE3',
+                },
+              })}
+            />
+            <Stack.Screen
+              name="Edit Room"
+              component={EditRoom}
               options={() => ({
                 headerStyle: {
                   backgroundColor: '#F1EFE3',

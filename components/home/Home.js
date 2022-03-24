@@ -11,6 +11,7 @@ import {CometChat} from '@cometchat-pro/react-native-chat';
 
 import {getRef, getDataRealtime, off} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
+import {showMessageWithActions} from '../../services/ui';
 
 import Add from '../../images/add.svg';
 
@@ -21,7 +22,7 @@ const Home = ({navigation}) => {
 
   const roomsRef = getRef('rooms');
 
-  const {user} = useContext(Context);
+  const {user, setRoomDetail} = useContext(Context);
 
   useEffect(() => {
     getRooms();
@@ -45,7 +46,7 @@ const Home = ({navigation}) => {
   const renderRoom = (item) => {
     const room = item.item;
     return (
-      <TouchableOpacity style={styles.room} onPress={roomDetail(room)}>
+      <TouchableOpacity style={styles.room} onPress={handleItemClicked(room)}>
         <View style={styles.left}>
           <Text style={styles.roomTitle}>{room.roomTitle}</Text>
         </View>
@@ -61,7 +62,29 @@ const Home = ({navigation}) => {
     );
   };
 
-  const roomDetail = (room) => async () => {
+  const handleItemClicked = (room) => async () => {
+    setRoomDetail(room);
+    if (room.createdBy.email === user.email) {
+      showMessageWithActions({
+        title: 'Confirm',
+        message: 'Please select the below options',
+        actions: [
+          {
+            text: 'View',
+            onPress: async () => await joinRoom(room),
+          },
+          {
+            text: 'Edit',
+            onPress: () => editRoom(),
+          },
+        ],
+      });
+    } else {
+      await joinRoom(room);
+    }
+  };
+
+  const joinRoom = async (room) => {
     await joinCometChatGroup(room);
     navigation.navigate('Room Detail', {room});
   };
@@ -79,6 +102,10 @@ const Home = ({navigation}) => {
         });
       }
     } catch (error) {}
+  };
+
+  const editRoom = () => {
+    navigation.navigate('Edit Room');
   };
 
   const getKey = (item) => {

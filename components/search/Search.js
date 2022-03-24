@@ -15,6 +15,7 @@ import Context from '../../context';
 
 import {
   getRef,
+  getDataRealtime,
   getDataRealtimeQuery,
   insertFirebaseDatabase,
 } from '../../services/firebase';
@@ -31,12 +32,20 @@ const Search = () => {
   const usersRef = getRef('users');
 
   useEffect(() => {
+    loadUnfollowedUsers();
+  }, []);
+
+  useEffect(() => {
     if (keywords && keywords.length) {
       searchUsers();
     } else {
       setUsers([]);
     }
   }, [keywords]);
+
+  const loadUnfollowedUsers = async () => {
+    getDataRealtime(usersRef, onUsersLoaded);
+  };
 
   const searchUsers = async () => {
     await getDataRealtimeQuery({
