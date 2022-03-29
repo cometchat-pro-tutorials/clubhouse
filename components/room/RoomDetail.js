@@ -19,6 +19,10 @@ const RoomDetail = ({route, navigation}) => {
   useEffect(() => {
     navigation.setOptions({title: room.roomTitle});
     getMembers();
+    onGroupUpdated();
+    return () => {
+      CometChat.removeGroupListener(room.id);
+    };
   }, []);
 
   const getMembers = async () => {
@@ -31,6 +35,24 @@ const RoomDetail = ({route, navigation}) => {
       const members = await groupMemberRequest.fetchNext();
       setMembers(() => members);
     } catch (error) {}
+  };
+
+  const onGroupUpdated = () => {
+    if (room?.id) {
+      CometChat.addGroupListener(
+        room.id,
+        new CometChat.GroupListener({
+          onGroupMemberJoined: (message, joinedUser, joinedGroup) => {
+            setMembers((prevMembers) => [...prevMembers, joinedUser]);
+          },
+          onGroupMemberLeft: (message, leftUser, leftGroup) => {
+            setMembers((prevMembers) =>
+              prevMembers.filter((member) => member.uid !== leftUser.uid),
+            );
+          },
+        }),
+      );
+    }
   };
 
   const renderMember = (item) => {
