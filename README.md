@@ -1,4 +1,4 @@
-# How to build an Clubhouse Clone with React Native
+# How to build an audioroom app with React Native
 
 Read the full tutorial here: [**>> How to build an Clubhouse Clone with React Native**](https://www.cometchat.com/tutorials/#)
 
