@@ -108,7 +108,7 @@ const Login = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Text style={styles.logoTitle}>Clubhouse</Text>
+        <Text style={styles.logoTitle}>Podium</Text>
       </View>
       <TextInput
         autoCapitalize="none"
