@@ -1,6 +1,6 @@
-# How to build an Clubhouse Clone with React Native
+# How to build an audioroom app with React Native
 
-Read the full tutorial here: [**>> How to build an Clubhouse Clone with React Native**](https://www.cometchat.com/tutorials/#)
+Read the full tutorial here: [**>> How to build an Audioroom App with React Native**](https://www.cometchat.com/tutorials/#)
 
 ## Technology
 
@@ -79,11 +79,12 @@ export const cometChatConfig = {
 ```
 
 11. cd to your root folder and hit npm i --force to install the packages.
-12. Run cd to the ios folder then run pod install to install the pods. Once pods are installed run cd .. to go back to the root folder.
-13. Run the app on iOS using npx react-native run-ios & on Android using npx react-native run-android
-14. Make sure to include env.js in your gitIgnore file from being exposed online.
-15. If you would like to test your application on IOS and you are using a Macbook - Apple Chip, you need to follow this link to configure your xcode and your ios project. [CometChat - Set up for IOS](https://prodocs.cometchat.com/docs/ios-setup)
-16. If you would like to test your application on Android and you have to face with an issue related to ANDROIRD_ROOT_SDK. Please refer to this [link](https://stackoverflow.com/questions/27620262/sdk-location-not-found-define-location-with-sdk-dir-in-the-local-properties-fil) to get the solution.
+12. Use node.js version14.17 or greater
+13. Run cd to the ios folder then run pod install to install the pods. Once pods are installed run cd .. to go back to the root folder.
+14. Run the app on iOS using npx react-native run-ios & on Android using npx react-native run-android
+15. Make sure to include env.js in your gitIgnore file from being exposed online.
+16. If you would like to test your application on IOS and you are using a Macbook - Apple Chip, you need to follow this link to configure your xcode and your ios project. [CometChat - Set up for IOS](https://prodocs.cometchat.com/docs/ios-setup)
+17. If you would like to test your application on Android and you have to face with an issue related to ANDROIRD_ROOT_SDK. Please refer to this [link](https://stackoverflow.com/questions/27620262/sdk-location-not-found-define-location-with-sdk-dir-in-the-local-properties-fil) to get the solution.
 
 Questions about running the demo? [Open an issue](https://github.com/hieptl/club-house/issues). We're here to help ✌️
 

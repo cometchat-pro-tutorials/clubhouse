@@ -185,21 +185,34 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
+    //implementation 'com.github.MatrixFrog:Android-ScalableVideoView:v1.0.4-jitpack' //manual addition due to jcenter being deprecated
 
+    
+    constraints {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") {
+            because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
+        }
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0") {
+            because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
+        }
+    }
+    
+    
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
 
-    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
-      exclude group:'com.facebook.fbjni'
+    debugImplementation("com.facebook.flipper:flipper:$FLIPPER_VERSION") {
+    exclude group:'com.facebook.fbjni'
     }
 
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:$FLIPPER_VERSION") {
         exclude group:'com.facebook.flipper'
         exclude group:'com.squareup.okhttp3', module:'okhttp'
     }
 
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
+    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:$FLIPPER_VERSION") {
         exclude group:'com.facebook.flipper'
     }
+
 
     if (enableHermes) {
         def hermesPath = "../../node_modules/hermes-engine/android/";
@@ -210,10 +223,43 @@ dependencies {
     }
 }
 
+//run this to order dependencies better solutions should be investigated later
+if (tasks.findByName("mergeDebugJavaResource")) {
+    tasks.named("mergeDebugJavaResource").configure {
+        dependsOn(":app:copyDebugIconFonts")
+    }
+}
+
+if (tasks.findByName("processDebugMainManifest")) {
+    tasks.named("processDebugMainManifest").configure {
+        dependsOn(":app:copyDebugIconFonts")
+    }
+}
+
+if (tasks.findByName("processDebugManifest")) {
+    tasks.named("processDebugManifest").configure {
+        dependsOn(":app:copyDebugIconFonts")
+    }
+}
+
+if (tasks.findByName("compressDebugAssets")) {
+    tasks.named("compressDebugAssets").configure {
+        dependsOn(":app:copyDebugIconFonts")
+    }
+}
+
+if (tasks.findByName("processDebugManifestForPackage")) {
+    tasks.named("processDebugManifestForPackage").configure {
+        dependsOn(":app:copyDebugIconFonts")
+    }
+}
+
+
+
 // Run this once to be able to run the application with BUCK
 // puts all compile dependencies into folder libs for BUCK to use
 task copyDownloadableDepsToLibs(type: Copy) {
-    from configurations.compile
+    from configurations.implementation
     into 'libs'
 }
 
