@@ -59,3 +59,4 @@ buck-out/
 /ios/Pods/
 
 env.js
+android/java_pid2209.hprof

@@ -70,6 +70,7 @@ const RoomDetail = ({route, navigation}) => {
   };
 
   const joinCall = () => {
+    console.log("Join call triggered", room);
     navigation.navigate('Call', {room});
   };
 
@@ -85,7 +86,7 @@ const RoomDetail = ({route, navigation}) => {
       <View style={styles.joinCallContainer}>
         <TouchableOpacity style={styles.joinCallBtn} onPress={joinCall}>
           <Call width={18} height={18} />
-          <Text style={styles.joinCallTxt}>Join Call</Text>
+          <Text style={styles.joinCallTxt}>Speak On It!</Text>
         </TouchableOpacity>
       </View>
     </View>
