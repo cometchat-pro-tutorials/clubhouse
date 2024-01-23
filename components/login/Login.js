@@ -62,6 +62,7 @@ const Login = ({navigation}) => {
       id,
       `${cometChatConfig.cometChatAuthKey}`,
     );
+    console.log("Logged in CometChat user:", user);
     if (user) {
       const authenticatedUser = await getUser(id);
       if (authenticatedUser) {

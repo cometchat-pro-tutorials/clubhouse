@@ -34,7 +34,7 @@ const App = () => {
   const initCometChat = async () => {
     const appID = `${cometChatConfig.cometChatAppId}`;
     const region = `${cometChatConfig.cometChatRegion}`;
-    console.log("This is the appID cometChat is configured to use: ", region);
+    console.log("This is the appID cometChat is configured to use: ", appID);
     console.log("This is the region cometChat is configured to use: ", region);
     const appSetting = new CometChat.AppSettingsBuilder()
       .subscribePresenceForAllUsers()
@@ -43,6 +43,7 @@ const App = () => {
     CometChat.init(appID, appSetting).then(
       () => {
         console.log('CometChat was initialized successfully');
+        console.log("appSettings used in initialization", appSetting);
       },
       (error) => {},
     );

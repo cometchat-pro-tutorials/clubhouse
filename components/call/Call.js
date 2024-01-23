@@ -29,6 +29,14 @@ const JoinCall = ({route, navigation}) => {
       onAudioModesUpdated: (audioModes) => {},
     });
 
+    //get logged in user
+    CometChat.getLoggedinUser().then(user => {
+      console.log("Currently logged in user: ", user);
+        // Setup your call here
+    }).catch(error => {
+        console.log("Error getting logged in user: ", error);
+    });
+
     const callSettings = new CometChat.CallSettingsBuilder()
       .enableDefaultLayout(defaultLayout)
       .setSessionID(sessionID)
