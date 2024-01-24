@@ -38,14 +38,29 @@ const App = () => {
     console.log("This is the appID cometChat is configured to use: ", region);
     console.log("This is the region cometChat is configured to use: ", region);
 
+    //Basic CometChat Sign in
+    const appSetting = new CometChat.AppSettingsBuilder()
+                        .subscribePresenceForAllUsers()
+                        .setRegion(region)
+                        .autoEstablishSocketConnection(true)
+                        .build();
+    CometChat.init(appID, appSetting).then(
+      () => {
+        console.log("Initialization completed successfully");
+      }, error => {
+        console.log("Initialization failed with error:", error);
+      }
+    );
+    
+    //CometCall (audio & video) sign in
     const callAppSettings = new CometChatCalls.CallAppSettingsBuilder()
       .setAppId(appID)
       .setRegion(region)
       .build();
 
-    CometChat.init(callAppSettings).then(
+    CometChatCalls.init(callAppSettings).then(
       () => {
-        console.log('CometChat was initialized successfully');
+        console.log('CometChatCalls was initialized successfully');
       },
       (error) => {
         console.log('CometChatCalls initialization failed with error:', error);
@@ -54,13 +69,17 @@ const App = () => {
   };
 
   const initAuthenticatedUser = async () => {
+    console.log("Initiate Authenticated User...");
     const authenticatedUser = await AsyncStorage.getItem('auth');
     setUser(() => (authenticatedUser ? JSON.parse(authenticatedUser) : null));
+    console.log("User is set");
   };
 
   useEffect(() => {
     initCometChat();
+    console.log("initCometChat done");
     initAuthenticatedUser();
+    console.log("initAuthenticatedUser done");
   }, []);
 
   const search = (navigation) => () => {

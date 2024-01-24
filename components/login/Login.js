@@ -45,6 +45,7 @@ const Login = ({navigation}) => {
       const userCredential = await signIn(email, password);
       if (!userCredential) return;
       const userId = userCredential.user.uid;
+      console.log("The UserId for the person logging in: ",userId);
       await loginCometChat(userId);
     } else {
       setIsLoading(false);
@@ -55,31 +56,49 @@ const Login = ({navigation}) => {
   const isUserCredentialsValid = (email, password) => {
     return validator.isEmail(email) && password;
   };
+  
 
   const loginCometChat = async (id) => {
     if (!id) return;
-    const user = await CometChat.login(
-      id,
-      `${cometChatConfig.cometChatAuthKey}`,
+    console.log("proceeding to use the updated SDK approach");
+    CometChat.getLoggedinUser().then(
+        user => {
+            if (!user) {
+                CometChat.login(id, `${cometChatConfig.cometChatAuthKey}`).then(
+                    user => {
+                        console.log("Login Successful:", { user });
+                        handleSuccessfulLogin(user, id);
+                    },
+                    error => {
+                        console.log("Login failed with exception:", { error });
+                        setIsLoading(false);
+                        showMessage('Error', 'CometChat login failed');
+                    }
+                );
+            } else {
+                // User is already logged in to CometChat
+                handleSuccessfulLogin(user, id);
+            }
+        },
+        error => {
+            console.log("Error getting logged in user: ", error);
+            setIsLoading(false);
+            showMessage('Error', 'Error in CometChat getLoggedinUser');
+        }
     );
-    if (user) {
-      const authenticatedUser = await getUser(id);
+  };
+
+  const handleSuccessfulLogin = async (cometChatUser, userId) => {
+      const authenticatedUser = await getUser(userId);
       if (authenticatedUser) {
-        setIsLoading(false);
-        setUser(authenticatedUser);
-        saveAuthedInfo(authenticatedUser);
-        navigation.navigate('Home');
+          setIsLoading(false);
+          setUser(authenticatedUser);
+          saveAuthedInfo(authenticatedUser);
+          navigation.navigate('Home');
       } else {
-        setIsLoading(false);
-        showMessage(
-          'Info',
-          'Cannot load the authenticated information, please try again',
-        );
+          setIsLoading(false);
+          showMessage('Info', 'Cannot load the authenticated information, please try again');
       }
-    } else {
-      setIsLoading(false);
-      showMessage('Error', 'Your username or password is not correct');
-    }
   };
 
   const getUser = async (id) => {
