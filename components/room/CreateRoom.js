@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {CometChat} from '@cometchat-pro/react-native-chat';
+import {CometChat} from '@cometchat/chat-sdk-react-native';
 import validator from 'validator';
 import 'react-native-get-random-values';
 import {v4 as uuidv4} from 'uuid';

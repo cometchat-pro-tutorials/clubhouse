@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {CometChat} from '@cometchat-pro/react-native-chat';
+import {CometChat} from '@cometchat/chat-sdk-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import validator from 'validator';
 

@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import {CometChat} from '@cometchat-pro/react-native-chat';
+import {CometChat} from '@cometchat/chat-sdk-react-native';
+import {CometChatCalls} from '@cometchat/calls-sdk-react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,15 +37,19 @@ const App = () => {
     const region = `${cometChatConfig.cometChatRegion}`;
     console.log("This is the appID cometChat is configured to use: ", region);
     console.log("This is the region cometChat is configured to use: ", region);
-    const appSetting = new CometChat.AppSettingsBuilder()
-      .subscribePresenceForAllUsers()
+
+    const callAppSettings = new CometChatCalls.CallAppSettingsBuilder()
+      .setAppId(appID)
       .setRegion(region)
       .build();
-    CometChat.init(appID, appSetting).then(
+
+    CometChat.init(callAppSettings).then(
       () => {
         console.log('CometChat was initialized successfully');
       },
-      (error) => {},
+      (error) => {
+        console.log('CometChatCalls initialization failed with error:', error);
+      },
     );
   };
 

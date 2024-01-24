@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import {CometChat} from '@cometchat-pro/react-native-chat';
+import {CometChat} from '@cometchat/chat-sdk-react-native';
 
 import {getRef, getDataRealtime, off} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
