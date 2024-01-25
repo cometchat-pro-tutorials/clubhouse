@@ -7,6 +7,7 @@ const JoinCall = ({route, navigation}) => {
   console.log("Joining Call");
   const {room} = route.params;
   const [callSettings, setCallSettings] = useState();
+  const [callToken, setCallToken] = useState(null);
 
   useEffect(() => {
     const fetchAuthTokenAndStartCall = async () => {
@@ -15,12 +16,14 @@ const JoinCall = ({route, navigation}) => {
           // Get logged in user to create authToken for Direct Call
           let loggedInUser = await CometChat.getLoggedinUser();
           let authToken = loggedInUser.getAuthToken();
-          const sessionID = room.id;
+          console.log("the authToken for Direct Call: ", authToken);
+          let sessionID = room.id;
 
           // Generate the token for the call using the auth token and session id (which is the ROOM id)
-          await CometChatCalls.generateToken(authToken, sessionID).then(
+          await CometChatCalls.generateToken(sessionID, authToken).then(
             res => {
               console.log("Call token fetched: ", res.token);
+              setCallToken(res.token); // Store the token in state
             },
             err => {
               console.log("Generating call token failed with error: ", err);
@@ -42,7 +45,10 @@ const JoinCall = ({route, navigation}) => {
     console.log("Starting call with room", room);
     const audioOnly = true;
     const defaultLayout = true;
-    const callListener = new CometChat.OngoingCallListener({
+    const switchCameraButton = false;
+    const switchToVideoCallButton = false;
+    const pauseVideoButton = false;
+    const callListener = new CometChatCalls.OngoingCallListener({
       onUserJoined: user => {
         console.log("user joined:", user);
       },
@@ -72,10 +78,13 @@ const JoinCall = ({route, navigation}) => {
       }
     });
 
-    const callSettings = new CometChat.CallSettingsBuilder()
+    const callSettings = new CometChatCalls.CallSettingsBuilder()
       .enableDefaultLayout(defaultLayout)
       .setIsAudioOnlyCall(audioOnly)
       .setCallEventListener(callListener)
+      .showSwitchCameraButton(switchCameraButton)
+      .showSwitchToVideoCallButton(switchToVideoCallButton)
+      .showPauseVideoButton(pauseVideoButton)
       .build();
     
     console.log("Call settings created", callSettings);
@@ -87,7 +96,7 @@ const JoinCall = ({route, navigation}) => {
     return (
       //REMOVE background color once functioning
       <View style={{height: '100%', width: '100%', position: 'relative', backgroundColor: 'red'}}>
-        <CometChatCalls.Component callsettings={callSettings} callToken={callToken} />
+        <CometChatCalls.Component callSettings={callSettings} callToken={callToken} />
       </View>
     );
   }
