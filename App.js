@@ -35,7 +35,7 @@ const App = () => {
   const initCometChat = async () => {
     const appID = `${cometChatConfig.cometChatAppId}`;
     const region = `${cometChatConfig.cometChatRegion}`;
-    console.log("This is the appID cometChat is configured to use: ", region);
+    console.log("This is the appID cometChat is configured to use: ", appID);
     console.log("This is the region cometChat is configured to use: ", region);
 
     //Basic CometChat Sign in
