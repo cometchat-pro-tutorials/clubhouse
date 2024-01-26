@@ -1,78 +1,118 @@
-import {
-  database,
-  databaseRef,
-  databaseSet,
-  databaseGet,
-  databaseChild,
-  databaseOnValue,
-  databaseQuery,
-  equalTo,
+import { auth, storage, database } from '../firebase';
+import { 
+  ref as databaseRef, 
+  set as databaseSet, 
+  get as databaseGet, 
+  child as databaseChild, 
+  onValue as databaseOnValue, 
+  off as databaseOff, 
+  query as databaseQuery, 
+  equalTo, 
   orderByChild,
-  auth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  storage,
-  storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-  databaseOff,
-} from '../firebase';
+  enableLogging  
+} from 'firebase/database';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword 
+} from 'firebase/auth';
+import { 
+  ref as storageRef, 
+  uploadBytesResumable, 
+  getDownloadURL 
+} from 'firebase/storage';
 
-const insertFirebaseDatabase = async ({key, id, payload}) => {
-  await databaseSet(databaseRef(database, key + id), payload);
+// Enable verbose logging
+enableLogging(true);
+
+const insertFirebaseDatabase = async ({ key, id, payload }) => {
+  try {
+    await databaseSet(databaseRef(database, `${key}/${id}`), payload);
+  } catch (error) {
+    console.error("Error inserting into Firebase database:", error);
+    throw error;
+  }
 };
 
 const getFirebaseData = async (key, id) => {
-  const ref = databaseRef(database);
-  const snapshot = await databaseGet(databaseChild(ref, `${key}${id}`));
-  if (!snapshot || !snapshot.exists()) {
-    return null;
+  try {
+    console.log("Get Firebase Data for key:", key, "and id:", id);
+    const ref = databaseRef(database, `${key}/${id}`);
+    const snapshot = await databaseGet(ref);
+    console.log("Snapshot taken:", snapshot.exists() ? 'Data exists' : 'No data found');
+    if (!snapshot.exists()) {
+      return null;
+    }
+    return snapshot.val();
+  } catch (error) {
+    console.error("Error getting Firebase data:", error);
+    throw error;
   }
-  return snapshot.val();
 };
 
 const getRef = (child) => databaseRef(database, child);
 
-const getDataRealtime = (ref, callback) => {
-  databaseOnValue(ref, (snapshot) => {
-    callback(snapshot.val());
-  });
+// Utility function to create a Firebase reference path as a string
+const createFirebaseRefPath = (node, id = '') => {
+  // Construct the path as a string
+  let path = node;
+  if (id) {
+    path += `/${id}`;
+  }
+  return path;
 };
 
-const getDataRealtimeQuery = async ({ref, query, criteria, callback}) => {
-  const snapshot = await databaseGet(
-    databaseQuery(ref, orderByChild(query), equalTo(criteria)),
-  );
-  callback(snapshot.val());
+
+const getDataRealtime = (node, id, callback) => {
+  const refPath = createFirebaseRefPath(node, id);
+
+  console.log("Type of refPath:", typeof refPath);
+  console.log("Value of refPath:", refPath);
+
+  if (typeof refPath !== 'string' || !refPath.trim()) {
+    console.error("Invalid refPath: must be a non-empty string");
+    return;
+  }
+
+  try {
+    const ref = databaseRef(database, refPath);
+    console.log("Database Ref: ", ref);
+    databaseOnValue(ref, (snapshot) => {
+      callback(snapshot.val());
+    });
+
+    return () => databaseOff(ref);
+  } catch (error) {
+    console.error("Error in getDataRealtime:", error);
+  }
 };
 
-const off = (ref) => {
+
+const getDataRealtimeQuery = async ({ path, queryKey, criteria, callback }) => {
+  const ref = databaseRef(database, path);
+  const queryRef = databaseQuery(ref, orderByChild(queryKey), equalTo(criteria));
+  databaseOnValue(queryRef, (snapshot) => callback(snapshot.val()));
+  return () => databaseOff(queryRef);
+};
+
+const off = (refPath) => {
+  const ref = databaseRef(database, refPath);
   databaseOff(ref);
 };
 
-const signIn = async (email, password) =>
-  await signInWithEmailAndPassword(auth, email, password);
+const signIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
-const createUser = async (email, password) =>
-  await await createUserWithEmailAndPassword(auth, email, password);
+const createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 
-const uploadFile = async ({fileRef, blob, contentType, onError, onSuccess}) => {
+const uploadFile = async ({ fileRef, blob, contentType, onError, onSuccess }) => {
   const storageFileRef = storageRef(storage, fileRef);
-  const uploadTask = uploadBytesResumable(storageFileRef, blob, {
-    contentType,
-  });
-  uploadTask.on(
-    'state_changed',
-    (snapshot) => {},
-    (error) => {
-      onError();
-    },
+  const uploadTask = uploadBytesResumable(storageFileRef, blob, { contentType });
+  uploadTask.on('state_changed', 
+    (snapshot) => {}, 
+    (error) => onError(error),
     async () => {
       const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-      if (downloadUrl) {
-        onSuccess(downloadUrl);
-      }
-    },
+      onSuccess(downloadUrl);
+    }
   );
 };
 

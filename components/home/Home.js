@@ -32,7 +32,9 @@ const Home = ({navigation}) => {
   }, []);
 
   const getRooms = () => {
-    getDataRealtime(roomsRef, onRoomsLoaded);
+    // Call getDataRealtime with the correct parameters
+    // Since you're fetching all rooms, only provide the 'node' parameter
+    getDataRealtime("rooms","", onRoomsLoaded);
   };
 
   const onRoomsLoaded = (val) => {
