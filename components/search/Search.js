@@ -44,13 +44,13 @@ const Search = () => {
   }, [keywords]);
 
   const loadUnfollowedUsers = async () => {
-    getDataRealtime(usersRef, onUsersLoaded);
+    getDataRealtime("users","", onUsersLoaded);
   };
 
   const searchUsers = async () => {
     await getDataRealtimeQuery({
-      ref: usersRef,
-      query: 'fullname',
+      path: 'users',
+      queryKey: 'fullname',
       criteria: keywords,
       callback: onUsersLoaded,
     });

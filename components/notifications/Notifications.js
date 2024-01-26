@@ -20,7 +20,7 @@ const Notifications = () => {
   }, []);
 
   const getNotifications = () => {
-    getDataRealtime(notificationsRef, onNotificationsLoaded);
+    getDataRealtime("notifications","", onNotificationsLoaded);
   };
 
   const onNotificationsLoaded = (val) => {
