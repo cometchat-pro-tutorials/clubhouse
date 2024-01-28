@@ -15,6 +15,11 @@ import validator from 'validator';
 
 import {cometChatConfig} from '../../env';
 
+// Import Particle Authcore
+import * as particleAuth from "@particle-network/rn-auth";
+import { registerWithParticle } from '../../particle'; // Import from particle.js
+
+//import Firebase from services
 import {
   insertFirebaseDatabase,
   createUser,
@@ -74,22 +79,34 @@ const SignUp = () => {
   const register = async () => {
     if (isSignupValid({confirmPassword, email, fullname, password})) {
       setIsLoading(true);
-      const userCredential = await createUser(email, password);
-      if (userCredential) {
-        const id = userCredential._tokenResponse.localId;
-        createdAccount.current = buildCreatedAccount({id, fullname, email});
-        await insertFirebaseDatabase({
-          key: 'users/',
-          id,
-          payload: createdAccount.current,
-        });
-        await uploadUserAvatar();
-      } else {
+
+      try {
+        // Register with Particle
+        const particleResult = await registerWithParticle(email, password);
+        if (particleResult.status) {
+          // Particle registration successful, proceed with Firebase
+          const userCredential = await createUser(email, password);
+          if (userCredential) {
+            const id = userCredential._tokenResponse.localId;
+            createdAccount.current = buildCreatedAccount({ id, fullname, email });
+            await insertFirebaseDatabase({
+              key: 'users/',
+              id,
+              payload: createdAccount.current,
+            });
+            await uploadUserAvatar();
+          } else {
+            setIsLoading(false);
+            showMessage('Error', 'Failed to create your account, your account might already exist');
+          }
+        } else {
+          setIsLoading(false);
+          showMessage('Error', 'Failed to register with Particle');
+        }
+      } catch (error) {
         setIsLoading(false);
-        showMessage(
-          'Error',
-          'Fail to create your account, your account might be existed',
-        );
+        console.error("Registration error:", error);
+        showMessage('Error', 'Registration failed');
       }
     }
   };

@@ -3,6 +3,7 @@
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
+#import <react_native_particle_auth/react_native_particle_auth-Swift.h>
 
 #ifdef FB_SONARKIT_ENABLED
 #import <FlipperKit/FlipperClient.h>
@@ -25,6 +26,7 @@ static void InitializeFlipper(UIApplication *application) {
 
 @implementation AppDelegate
 
+//sets up the React Native bridge and root view
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
 #ifdef FB_SONARKIT_ENABLED
@@ -43,6 +45,16 @@ static void InitializeFlipper(UIApplication *application) {
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;
   [self.window makeKeyAndVisible];
+  return YES;
+}
+
+// Add this method for Particle Auth URL handling
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+  if ([ParticleAuthSchemeManager handleUrl:url] == YES) {
+    return YES;
+  } else {
+    // Handle other URLs here if necessary
+  }
   return YES;
 }
 
