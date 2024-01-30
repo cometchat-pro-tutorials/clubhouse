@@ -42,9 +42,11 @@ const registerWithParticle = async (email, password) => {
     if (result.status) {
         const userInfo = result.data;
         console.log(userInfo);
+        return result; // Ensure that result is returned
     } else {
         const error = result.data;
         console.error(error);
+        return result; // Ensure that result is returned even in case of error
     }
   };
   

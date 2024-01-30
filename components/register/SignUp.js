@@ -77,36 +77,40 @@ const SignUp = () => {
   };
 
   const register = async () => {
-    if (isSignupValid({confirmPassword, email, fullname, password})) {
+    if (isSignupValid({ confirmPassword, email, fullname, password })) {
       setIsLoading(true);
 
       try {
         // Register with Particle
         const particleResult = await registerWithParticle(email, password);
-        if (particleResult.status) {
-          // Particle registration successful, proceed with Firebase
-          const userCredential = await createUser(email, password);
-          if (userCredential) {
-            const id = userCredential._tokenResponse.localId;
-            createdAccount.current = buildCreatedAccount({ id, fullname, email });
-            await insertFirebaseDatabase({
-              key: 'users/',
-              id,
-              payload: createdAccount.current,
-            });
-            await uploadUserAvatar();
-          } else {
-            setIsLoading(false);
-            showMessage('Error', 'Failed to create your account, your account might already exist');
+        if (particleResult && particleResult.status) {
+          // Proceed with Firebase registration
+          try {
+            const userCredential = await createUser(email, password);
+            if (userCredential) {
+              const id = userCredential._tokenResponse.localId; // Corrected to align with Firebase v9 syntax
+              createdAccount.current = buildCreatedAccount({id, fullname, email});
+              await insertFirebaseDatabase({
+                key: 'users/',
+                id,
+                payload: createdAccount.current,
+              });
+                await uploadUserAvatar();
+              showMessage('Success', 'Account created successfully!');
+            } else {
+              showMessage('Error', 'Failed to create Firebase account');
+            }
+          } catch (firebaseError) {
+            showMessage('Error', `Firebase Error: ${firebaseError.message}`);
           }
         } else {
-          setIsLoading(false);
-          showMessage('Error', 'Failed to register with Particle');
+          showMessage('Error', 'Particle registration failed');
         }
       } catch (error) {
-        setIsLoading(false);
         console.error("Registration error:", error);
         showMessage('Error', 'Registration failed');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
