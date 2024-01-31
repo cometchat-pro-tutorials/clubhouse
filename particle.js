@@ -49,6 +49,34 @@ const registerWithParticle = async (email, password) => {
         return result; // Ensure that result is returned even in case of error
     }
   };
+
+  // Function to handle Particle Authcore login  --- similar code as register just separated for clarity
+const loginWithParticle = async (email, password) => {
+  const type = LoginType.Email; // Assuming email login type
+  const supportAuthType = [SupportAuthType.All]; // Supports all auth types
+
+  try {
+      const result = await particleAuth.login(type, email, supportAuthType);
+
+      if (result.status) {
+          // Login successful, return the user info
+          const userInfo = result.data;
+          console.log("Particle login successful:", userInfo);
+          return userInfo;
+      } else {
+          // Login failed, log the error and return null
+          const error = result.data;
+          console.error("Particle login error:", error);
+          return null;
+      }
+  } catch (error) {
+      // Exception occurred, log the error and return null
+      console.error("Particle login exception:", error);
+      return null;
+  }
+};
+
+
   
   // Export the functions
-  export { registerWithParticle };
+  export { registerWithParticle, loginWithParticle };
