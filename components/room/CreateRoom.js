@@ -39,6 +39,14 @@ const CreateRoom = () => {
     }
     setIsLoading(true);
     const room = buildRoom();
+    // Add an initial speaker with time allotment as an example
+    room.speakers.push({
+    speakerID: "initialSpeakerID", // Placeholder, update as needed
+    allottedTime: 30, // in minutes
+    expiryTimestamp: Date.now() + 30 * 60000, // 30 minutes from now
+    thumbsUp: 0,
+    thumbsDown: 0
+  });
     await insertFirebaseDatabase({
       key: 'rooms/',
       id: room.id,
@@ -54,6 +62,7 @@ const CreateRoom = () => {
     id: uuidv4(),
     roomTitle,
     createdBy: user,
+    speakers: [], // Initialize an empty array for speakers
   });
 
   const createCometChatGroup = async (room) => {
