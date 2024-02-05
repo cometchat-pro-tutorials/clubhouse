@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 
 import com.android.build.OutputFile
+import org.apache.tools.ant.taskdefs.condition.Os
 
 /**
  * The react.gradle file registers a task for each build variant (e.g. bundleDebugJsAndAssets
@@ -135,7 +136,19 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        
+        //Particle Network Documentation related info auth service sdk
+        manifestPlaceholders["PN_PROJECT_ID"] = "d492420c-1208-4ca5-8e46-cd35e28e0e0b"
+        manifestPlaceholders["PN_PROJECT_CLIENT_KEY"] =
+        "cW7F6aqomWwZ2pfllHJmvIBfxgFbEFjMXOmBqt9B"
+        manifestPlaceholders["PN_APP_ID"] = "d659f68c-20b1-4a34-822c-ae6e8625a2ff"
     }
+
+    //How you quote wallet sdk, you must set it
+    dataBinding {
+        enabled = true
+    }
+    
     splits {
         abi {
             reset()

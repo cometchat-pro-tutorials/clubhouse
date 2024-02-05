@@ -15,6 +15,7 @@ import {cometChatConfig} from '../../env';
 
 import Context from '../../context';
 
+import { loginWithParticle } from '../../particle';
 import {getFirebaseData, signIn} from '../../services/firebase';
 import {showMessage} from '../../services/ui';
 
@@ -22,6 +23,10 @@ const Login = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // New state variables for tracking authentication stages
+  const [isParticleAuthInProgress, setIsParticleAuthInProgress] = useState(false);
+  const [isAwaiting2FA, setIsAwaiting2FA] = useState(false);
 
   const {setUser} = useContext(Context);
 
@@ -37,21 +42,40 @@ const Login = ({navigation}) => {
 
   const onPasswordChanged = (password) => {
     setPassword(() => password);
-  };
+  };  
 
   const login = async () => {
     if (isUserCredentialsValid(email, password)) {
-      setIsLoading(true);
-      const userCredential = await signIn(email, password);
-      if (!userCredential) return;
-      const userId = userCredential.user.uid;
-      console.log("The UserId for the person logging in: ",userId);
-      await loginCometChat(userId);
-    } else {
-      setIsLoading(false);
-      showMessage('Error', 'Your username or password is not correct');
+        setIsLoading(true);
+        try {
+            const userCredential = await signIn(email, password);
+            if (userCredential) {
+                const userId = userCredential.user.uid;
+                console.log("Firebase login successful, UserID:", userId);
+
+                // Now perform Particle login
+                const particleResult = await loginWithParticle(email, password);
+                console.log("Particle Result: ",particleResult);
+                console.log("particleResult.status: ",particleResult.status); 
+                if (particleResult) {
+                    await loginCometChat(userId);
+                } else {
+                    console.log("Particle login failed");
+                    // Handle Particle login failure
+                }
+            } else {
+                console.log("Firebase login failed");
+                setIsLoading(false);
+                showMessage('Error', 'Firebase authentication failed');
+            }
+        } catch (error) {
+            console.error("Firebase login error:", error);
+            setIsLoading(false);
+            showMessage('Error', 'Error during Firebase login');
+        }
     }
   };
+
 
   const isUserCredentialsValid = (email, password) => {
     return validator.isEmail(email) && password;
@@ -129,6 +153,10 @@ const Login = ({navigation}) => {
       <View style={styles.logoContainer}>
         <Text style={styles.logoTitle}>Podium</Text>
       </View>
+  
+      {isLoading && <ActivityIndicator size="large" color="#3B82F6" />}
+      {isAwaiting2FA && <Text style={styles.infoText}>Please complete 2FA verification.</Text>}
+  
       <TextInput
         autoCapitalize="none"
         onChangeText={onEmailChanged}
@@ -144,9 +172,11 @@ const Login = ({navigation}) => {
         secureTextEntry
         style={styles.loginInput}
       />
+  
       <TouchableOpacity style={styles.loginBtn} onPress={login}>
         <Text style={styles.loginTxt}>Login</Text>
       </TouchableOpacity>
+  
       <TouchableOpacity style={styles.registerBtn} onPress={register('SignUp')}>
         <Text style={styles.registerTxt}>Register</Text>
       </TouchableOpacity>
@@ -154,12 +184,18 @@ const Login = ({navigation}) => {
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'center',
+  },
+  infoText: {
+    textAlign: 'center',
+    color: '#007bff',
+    marginVertical: 10,
   },
   logoContainer: {
     display: 'flex',
