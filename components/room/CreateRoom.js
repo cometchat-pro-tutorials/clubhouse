@@ -36,34 +36,40 @@ const CreateRoom = () => {
   const createRoom = async () => {
     if (validator.isEmpty(roomTitle)) {
       showMessage('Error', 'Please input the room title');
+      return;
     }
     setIsLoading(true);
-    const room = buildRoom();
-    // Add an initial speaker with time allotment as an example
-    room.speakers.push({
-    speakerID: "initialSpeakerID", // Placeholder, update as needed
-    allottedTime: 30, // in minutes
-    expiryTimestamp: Date.now() + 30 * 60000, // 30 minutes from now
-    thumbsUp: 0,
-    thumbsDown: 0
-  });
-    await insertFirebaseDatabase({
-      key: 'rooms/',
-      id: room.id,
-      payload: room,
-    });
-    await createCometChatGroup(room);
-    setIsLoading(false);
-    showMessage('Info', `${roomTitle} was created successfully`);
-    setRoomTitle(() => '');
+  
+    const roomId = uuidv4();
+    const room = {
+      id: roomId,
+      roomTitle,
+      createdBy: user,
+      speakers: [{
+        speaker: user.id, // Creator of the room
+        allottedTime: 30, // in minutes
+        expiryTimestamp: Date.now() + 300000* 60000, // 300000 minutes from now
+        thumbsUp: 0,
+        thumbsDown: 0
+      }]
+    };
+  
+    try {
+      await insertFirebaseDatabase({
+        key: 'rooms/',
+        id: roomId,
+        payload: room,
+      });
+      await createCometChatGroup(room);
+      showMessage('Info', `${roomTitle} was created successfully`);
+    } catch (error) {
+      console.error("Error creating room:", error);
+      showMessage('Error', 'Failed to create room');
+    } finally {
+      setIsLoading(false);
+      setRoomTitle('');
+    }
   };
-
-  const buildRoom = () => ({
-    id: uuidv4(),
-    roomTitle,
-    createdBy: user,
-    speakers: [], // Initialize an empty array for speakers
-  });
 
   const createCometChatGroup = async (room) => {
     const groupType = CometChat.GROUP_TYPE.PUBLIC;
