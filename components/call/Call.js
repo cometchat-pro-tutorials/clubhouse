@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {View, TouchableOpacity, StyleSheet, Text, Modal, FlatList } from 'react-native';
 import {CometChat} from '@cometchat/chat-sdk-react-native';
 import {CometChatCalls} from '@cometchat/calls-sdk-react-native';
-import {updateFirebaseDatabase} from '../../services/firebase';
+import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
 
 const JoinCall = ({route, navigation}) => {
   console.log("Joining Call");
@@ -11,7 +11,7 @@ const JoinCall = ({route, navigation}) => {
   const [callToken, setCallToken] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [participants, setParticipants] = useState([]);
-
+  const [currentActionType, setCurrentActionType] = useState(null);
 
   useEffect(() => {
     const fetchAuthTokenAndStartCall = async () => {
@@ -98,11 +98,13 @@ const JoinCall = ({route, navigation}) => {
    
   const onThumbsUp = () => {
     console.log("Thumbs Up clicked");
+    setCurrentActionType('thumbsUp');
     showParticipants();
   };
 
   const onThumbsDown = () => {
     console.log("Thumbs Down clicked");
+    setCurrentActionType('thumbsDown');
     showParticipants();
     // Handle the thumbs down action here
   };
@@ -128,35 +130,47 @@ const JoinCall = ({route, navigation}) => {
       fetchCallParticipants();
       setIsModalVisible(true);
   };
-
-  const handleParticipantPress = async (participantUid, actionType) => {
-    // Example path to a specific speaker's expiryTimestamp
-    const nestedKey = `speakers/${participantUid}/expiryTimestamp`;
-    
-    let newExpiryTimestamp;
-    const currentTime = Date.now();
-    if (actionType === 'thumbsUp') {
-        newExpiryTimestamp = speakerData.expiryTimestamp + (5 * 60 * 1000); // Add 5 minutes
-    } else if (actionType === 'thumbsDown') {
-        // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
-        const timeDifference = speakerData.expiryTimestamp - currentTime;
-        const reductionAmount = Math.min(timeDifference * 0.2, 1 * 60 * 1000); // 1 minute or 20%
-        newExpiryTimestamp = speakerData.expiryTimestamp - reductionAmount;
-    } else {
-        console.error("Invalid actionType:", actionType);
-        return;
-    }
   
+  const handleParticipantPress = async (roomId, participantUid, actionType) => {
     try {
-      await updateFirebaseDatabase({
-        key: 'rooms',
-        id: room.id,
-        nestedKey: nestedKey,
-        payload: newExpiryTimestamp
-      });
-      console.log("Expiry timestamp updated for speaker:", participantUid);
+      // Fetch the entire room data
+      const roomData = await getFirebaseData('rooms', roomId);
+      if (roomData && roomData.speakers) {
+        const speakerData = roomData.speakers[participantUid];
+        if (!speakerData) {
+          console.error(`Speaker with UID ${participantUid} not found.`);
+          return;
+        }
+        
+        const currentTime = Date.now();
+        let newExpiryTimestamp = speakerData.expiryTimestamp;
+        
+        if (actionType === 'thumbsUp') {
+          newExpiryTimestamp += 5 * 60 * 1000; // Add 5 minutes
+        } else if (actionType === 'thumbsDown') {
+          // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
+          const timeDifference = speakerData.expiryTimestamp - currentTime;
+          const reductionAmount = Math.min(timeDifference * 0.2, 1 * 60 * 1000); // 1 minute or 20%
+          newExpiryTimestamp -= reductionAmount;
+        } else {
+          console.error("Invalid actionType:", actionType);
+          return;
+        }
+        
+        // Update the expiryTimestamp in the database
+        await updateFirebaseDatabase({
+          key: 'rooms/' + roomId + '/speakers',
+          id: participantUid,
+          nestedKey: 'expiryTimestamp',
+          payload: newExpiryTimestamp
+        });
+        
+        console.log("Expiry timestamp updated for speaker:", participantUid, "to", newExpiryTimestamp);
+      } else {
+        console.error("Room data not found or missing speakers.");
+      }
     } catch (error) {
-      console.error("Failed to update expiry timestamp for speaker:", participantUid, error);
+      console.error("Error updating expiry timestamp:", error);
     }
   };
   
@@ -186,20 +200,15 @@ const JoinCall = ({route, navigation}) => {
                 onRequestClose={() => setIsModalVisible(false)}
             >
                 <View style={styles.modalView}>
-                    <FlatList
-                        data={participants}
-                        keyExtractor={item => item.uid}
-                        renderItem={({ item }) => (
-                            <View style={styles.participantItemContainer}> {/* Add this wrapper View */}
-                                <TouchableOpacity onPress={() => handleParticipantPress(item.uid, 'thumbsUp')}>
-                                    <Text style={styles.participantName}>{item.name} - Thumbs Up</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleParticipantPress(item.uid, 'thumbsDown')}>
-                                    <Text style={styles.participantName}>{item.name} - Thumbs Down</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    />
+                <FlatList
+                  data={participants}
+                  keyExtractor={item => item.uid}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => handleParticipantPress(room.id, item.uid, currentActionType)}>
+                      <Text style={styles.participantName}>{item.name}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={() => setIsModalVisible(false)}
