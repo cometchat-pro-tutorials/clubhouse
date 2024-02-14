@@ -146,11 +146,15 @@ const JoinCall = ({route, navigation}) => {
         let newExpiryTimestamp = speakerData.expiryTimestamp;
         
         if (actionType === 'thumbsUp') {
+          // Check if expiryTimestamp is in the past
+          if (newExpiryTimestamp < currentTime) {
+            newExpiryTimestamp = currentTime; // Start from current time if past
+          }
           newExpiryTimestamp += 5 * 60 * 1000; // Add 5 minutes
         } else if (actionType === 'thumbsDown') {
           // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
           const timeDifference = speakerData.expiryTimestamp - currentTime;
-          const reductionAmount = Math.min(timeDifference * 0.2, 1 * 60 * 1000); // 1 minute or 20%
+          const reductionAmount = Math.floor(Math.min(timeDifference * 0.2), 1 * 60 * 1000); // 1 minute or 20%, rounded down
           newExpiryTimestamp -= reductionAmount;
         } else {
           console.error("Invalid actionType:", actionType);
