@@ -15,6 +15,11 @@ import validator from 'validator';
 
 import {cometChatConfig} from '../../env';
 
+// Import Particle Authcore
+import * as particleAuth from "@particle-network/rn-auth";
+import { registerWithParticle } from '../../particle'; // Import from particle.js
+
+//import Firebase from services
 import {
   insertFirebaseDatabase,
   createUser,
@@ -72,24 +77,40 @@ const SignUp = () => {
   };
 
   const register = async () => {
-    if (isSignupValid({confirmPassword, email, fullname, password})) {
+    if (isSignupValid({ confirmPassword, email, fullname, password })) {
       setIsLoading(true);
-      const userCredential = await createUser(email, password);
-      if (userCredential) {
-        const id = userCredential._tokenResponse.localId;
-        createdAccount.current = buildCreatedAccount({id, fullname, email});
-        await insertFirebaseDatabase({
-          key: 'users/',
-          id,
-          payload: createdAccount.current,
-        });
-        await uploadUserAvatar();
-      } else {
+
+      try {
+        // Register with Particle
+        const particleResult = await registerWithParticle(email, password);
+        if (particleResult && particleResult.status) {
+          // Proceed with Firebase registration
+          try {
+            const userCredential = await createUser(email, password);
+            if (userCredential) {
+              const id = userCredential._tokenResponse.localId; // Corrected to align with Firebase v9 syntax
+              createdAccount.current = buildCreatedAccount({id, fullname, email});
+              await insertFirebaseDatabase({
+                key: 'users/',
+                id,
+                payload: createdAccount.current,
+              });
+                await uploadUserAvatar();
+              showMessage('Success', 'Account created successfully!');
+            } else {
+              showMessage('Error', 'Failed to create Firebase account');
+            }
+          } catch (firebaseError) {
+            showMessage('Error', `Firebase Error: ${firebaseError.message}`);
+          }
+        } else {
+          showMessage('Error', 'Particle registration failed');
+        }
+      } catch (error) {
+        console.error("Registration error:", error);
+        showMessage('Error', 'Registration failed');
+      } finally {
         setIsLoading(false);
-        showMessage(
-          'Error',
-          'Fail to create your account, your account might be existed',
-        );
       }
     }
   };
