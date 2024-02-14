@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {View, TouchableOpacity, StyleSheet, Text, Modal, FlatList } from 'react-native';
 import {CometChat} from '@cometchat/chat-sdk-react-native';
 import {CometChatCalls} from '@cometchat/calls-sdk-react-native';
+import {updateFirebaseDatabase} from '../../services/firebase';
 
 const JoinCall = ({route, navigation}) => {
   console.log("Joining Call");
@@ -128,6 +129,40 @@ const JoinCall = ({route, navigation}) => {
       setIsModalVisible(true);
   };
 
+  const handleParticipantPress = async (participantUid, actionType) => {
+    // Example path to a specific speaker's expiryTimestamp
+    const nestedKey = `speakers/${participantUid}/expiryTimestamp`;
+    
+    let newExpiryTimestamp;
+    const currentTime = Date.now();
+    if (actionType === 'thumbsUp') {
+        newExpiryTimestamp = speakerData.expiryTimestamp + (5 * 60 * 1000); // Add 5 minutes
+    } else if (actionType === 'thumbsDown') {
+        // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
+        const timeDifference = speakerData.expiryTimestamp - currentTime;
+        const reductionAmount = Math.min(timeDifference * 0.2, 1 * 60 * 1000); // 1 minute or 20%
+        newExpiryTimestamp = speakerData.expiryTimestamp - reductionAmount;
+    } else {
+        console.error("Invalid actionType:", actionType);
+        return;
+    }
+  
+    try {
+      await updateFirebaseDatabase({
+        key: 'rooms',
+        id: room.id,
+        nestedKey: nestedKey,
+        payload: newExpiryTimestamp
+      });
+      console.log("Expiry timestamp updated for speaker:", participantUid);
+    } catch (error) {
+      console.error("Failed to update expiry timestamp for speaker:", participantUid, error);
+    }
+  };
+  
+  
+
+
   if (callSettings) {
     return (
         <View style={styles.container}>
@@ -154,8 +189,15 @@ const JoinCall = ({route, navigation}) => {
                     <FlatList
                         data={participants}
                         keyExtractor={item => item.uid}
-                        renderItem={({item}) => (
-                            <Text style={styles.participantName}>{item.name}</Text>
+                        renderItem={({ item }) => (
+                            <View style={styles.participantItemContainer}> {/* Add this wrapper View */}
+                                <TouchableOpacity onPress={() => handleParticipantPress(item.uid, 'thumbsUp')}>
+                                    <Text style={styles.participantName}>{item.name} - Thumbs Up</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleParticipantPress(item.uid, 'thumbsDown')}>
+                                    <Text style={styles.participantName}>{item.name} - Thumbs Down</Text>
+                                </TouchableOpacity>
+                            </View>
                         )}
                     />
                     <TouchableOpacity
@@ -165,6 +207,7 @@ const JoinCall = ({route, navigation}) => {
                         <Text>Close</Text>
                     </TouchableOpacity>
                 </View>
+
             </Modal>
         </View>
     );
