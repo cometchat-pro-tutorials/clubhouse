@@ -10,6 +10,7 @@ import {
 import {CometChat} from '@cometchat/chat-sdk-react-native';
 
 import {getRef, getDataRealtime, off} from '../../services/firebase';
+import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
 import {showMessageWithActions} from '../../services/ui';
 
@@ -88,8 +89,29 @@ const Home = ({navigation}) => {
 
   const joinRoom = async (room) => {
     await joinCometChatGroup(room);
+  
+    // Check if the user is already a speaker in the room
+    const roomData = await getFirebaseData('rooms', room.id);
+    if (roomData && roomData.speakers && !roomData.speakers[user.id]) {
+      
+      // User is not a speaker yet, add them
+      let newExpiryTimestamp = Date.now() + 30 * 60000;
+
+      // Construct the path and payload for updating Firebase
+      const updatePath = `rooms/${room.id}/speakers`;
+      await updateFirebaseDatabase({
+        key: updatePath,
+        id: user.id,
+        nestedKey: 'expiryTimestamp',
+        payload: newExpiryTimestamp
+      });
+  
+      console.log(`${user.fullname} added as a speaker to room: ${room.roomTitle}`);
+    }
+  
     navigation.navigate('Room Detail', {room});
   };
+  
 
   const joinCometChatGroup = async (room) => {
     const password = '';

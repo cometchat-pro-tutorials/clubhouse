@@ -177,6 +177,34 @@ const JoinCall = ({route, navigation}) => {
       console.error("Error updating expiry timestamp:", error);
     }
   };
+
+  const checkAndMuteSpeakerIfNecessary = async (roomId, participantUid) => {
+    try {
+        const roomData = await getFirebaseData('rooms', roomId);
+        if (roomData && roomData.speakers && roomData.speakers[participantUid]) {
+            const speakerData = roomData.speakers[participantUid];
+            const currentTime = Date.now();
+            
+            // If expiryTimestamp is in the past, mute the speaker
+            if (currentTime > speakerData.expiryTimestamp) {
+                muteSpeaker(participantUid);
+                console.log(`Speaker ${participantUid} muted due to expired talk time.`);
+            }
+        } else {
+            console.error("Speaker or room data not found.");
+        }
+    } catch (error) {
+        console.error("Error checking speaker expiry timestamp:", error);
+    }
+  };
+
+  // Function to mute a speaker
+  const muteSpeaker = (participantUid) => {
+      // Implementation depends on how you manage call state and interactions.
+      // This might involve sending a command to the call or directly using CometChat's API to mute the user.
+      console.log(`Implement muting logic for speaker: ${participantUid}`);
+  };
+
   
   
 
