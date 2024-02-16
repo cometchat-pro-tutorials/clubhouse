@@ -25,26 +25,33 @@ import Context from '../../context';
 const rpcUrl = "https://mevm.devnet.m1.movementlabs.xyz/v1";
 const chainId = 336; // The chain ID for your custom network
 
+const provider = new ethers.providers.JsonRpcProvider('https://mevm.devnet.m1.movementlabs.xyz/v1');
 // Initialize a StaticJsonRpcProvider with your RPC URL
-const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+/*const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
   name: "MoveVM",
   chainId: chainId
-});
+});*/
+
 
 const contractAddress = '0xf7333e9fb03f25088879005fdCA9406993f33878';
 const contract = new ethers.Contract(contractAddress, socialKeysABI, provider);
 
 // Function to call keysBalance
 const getKeysBalance = async (address) => {
-  console.log(`In the getKeysBalance function`);
-  console.log(await provider.getCode(address));
+  console.log(`Checking contract code at address: ${contractAddress}`);
   try {
-    await provider.getNetwork()
-    const balance = await contract.keysBalance(address,address);
-    console.log(`Keys Balance: ${balance}`);
-    // Handle the balance here
+    const code = await provider.getCode(contractAddress);
+    console.log(code);
+    if (code === '0x') {
+      console.error(`No contract found at address: ${contractAddress}`);
+      return;
+    }
+
+    console.log(`Contract found. Fetching keysBalance for address: ${address}`);
+    const balance = await contract.keysBalance(address);
+    console.log(`Keys Balance: ${balance.toString()}`);
   } catch (error) {
-    console.error(`Error fetching keysBalance: ${error}`);
+    console.error(`Error fetching keysBalance: ${error.message}`);
   }
 };
 
