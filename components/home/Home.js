@@ -14,9 +14,34 @@ import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
 import {showMessageWithActions} from '../../services/ui';
 
+import { ethers } from 'ethers';
+import socialKeysABI from '../../abi/socialkey.json';
+
 import Add from '../../images/add.svg';
 
 import Context from '../../context';
+
+const customNetwork = {
+  name: "MOV EVM", // A name for your custom network
+  chainId: 336, // The chain ID of your network
+};
+
+const contractAddress = '0xf7333e9fb03f25088879005fdCA9406993f33878';
+const provider = new ethers.providers.JsonRpcProvider("https://mevm.devnet.m1.movementlabs.xyz",customNetwork);
+const contract = new ethers.Contract(contractAddress, socialKeysABI, provider);
+
+// Function to call keysBalance
+const getKeysBalance = async (address) => {
+  console.log(`In the getKeysBalance function`);
+  try {
+    await provider.getNetwork()
+    const balance = await contract.keysBalance(address,address);
+    console.log(`Keys Balance: ${balance}`);
+    // Handle the balance here
+  } catch (error) {
+    console.error(`Error fetching keysBalance: ${error}`);
+  }
+};
 
 const Home = ({navigation}) => {
   const [rooms, setRooms] = useState();
@@ -42,6 +67,9 @@ const Home = ({navigation}) => {
     if (val) {
       const keys = Object.keys(val);
       const data = keys.map((key) => val[key]);
+      //temporary location
+    console.log(`should be calling getKeysBalance next`);
+    getKeysBalance(contractAddress);
       setRooms(() => data);
     }
   };

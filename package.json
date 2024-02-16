@@ -24,6 +24,7 @@
     "@react-navigation/stack": "^5.12.8",
     "buffer": "^6.0.3",
     "emoji-mart-native": "^0.6.2-beta",
+    "ethers": "^5.7.2",
     "firebase": "^9.4.1",
     "idb": "3.0.2",
     "react": "16.13.1",
