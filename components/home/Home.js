@@ -21,18 +21,23 @@ import Add from '../../images/add.svg';
 
 import Context from '../../context';
 
-const customNetwork = {
-  name: "MOV EVM", // A name for your custom network
-  chainId: 336, // The chain ID of your network
-};
+// Assuming these are the known network parameters
+const rpcUrl = "https://mevm.devnet.m1.movementlabs.xyz/v1";
+const chainId = 336; // The chain ID for your custom network
+
+// Initialize a StaticJsonRpcProvider with your RPC URL
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
+  name: "MoveVM",
+  chainId: chainId
+});
 
 const contractAddress = '0xf7333e9fb03f25088879005fdCA9406993f33878';
-const provider = new ethers.providers.JsonRpcProvider("https://mevm.devnet.m1.movementlabs.xyz",customNetwork);
 const contract = new ethers.Contract(contractAddress, socialKeysABI, provider);
 
 // Function to call keysBalance
 const getKeysBalance = async (address) => {
   console.log(`In the getKeysBalance function`);
+  console.log(await provider.getCode(address));
   try {
     await provider.getNetwork()
     const balance = await contract.keysBalance(address,address);
