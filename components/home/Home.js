@@ -13,47 +13,15 @@ import {getRef, getDataRealtime, off} from '../../services/firebase';
 import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
 import {showMessageWithActions} from '../../services/ui';
-
+import "@ethersproject/shims"
 import { ethers } from 'ethers';
 import socialKeysABI from '../../abi/socialkey.json';
+import { initializeEthers } from '../web3/initializeEthers'; 
 
 import Add from '../../images/add.svg';
 
 import Context from '../../context';
 
-// Assuming these are the known network parameters
-const rpcUrl = "https://mevm.devnet.m1.movementlabs.xyz/v1";
-const chainId = 336; // The chain ID for your custom network
-
-const provider = new ethers.providers.JsonRpcProvider('https://mevm.devnet.m1.movementlabs.xyz/v1');
-// Initialize a StaticJsonRpcProvider with your RPC URL
-/*const provider = new ethers.providers.StaticJsonRpcProvider(rpcUrl, {
-  name: "MoveVM",
-  chainId: chainId
-});*/
-
-
-const contractAddress = '0xf7333e9fb03f25088879005fdCA9406993f33878';
-const contract = new ethers.Contract(contractAddress, socialKeysABI, provider);
-
-// Function to call keysBalance
-const getKeysBalance = async (address) => {
-  console.log(`Checking contract code at address: ${contractAddress}`);
-  try {
-    const code = await provider.getCode(contractAddress);
-    console.log(code);
-    if (code === '0x') {
-      console.error(`No contract found at address: ${contractAddress}`);
-      return;
-    }
-
-    console.log(`Contract found. Fetching keysBalance for address: ${address}`);
-    const balance = await contract.keysBalance(address);
-    console.log(`Keys Balance: ${balance.toString()}`);
-  } catch (error) {
-    console.error(`Error fetching keysBalance: ${error.message}`);
-  }
-};
 
 const Home = ({navigation}) => {
   const [rooms, setRooms] = useState();
@@ -63,11 +31,36 @@ const Home = ({navigation}) => {
   const {user, setRoomDetail} = useContext(Context);
 
   useEffect(() => {
-    getRooms();
-    return () => {
-      off(roomsRef);
+    let isMounted = true; // Flag to track mounted state
+
+  // Asynchronously initialize Firebase and ethers
+  const initialize = async () => {
+    if (isMounted) {
+      await initFirebase();
+    }
+  };
+  
+    // Function to initialize Firebase
+    const initFirebase = async () => {
+      try {
+        await getRooms(); // Assuming getRooms() returns a Promise
+        console.log("Firebase initialization completed");
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+      }
     };
-  }, []);
+
+    initialize();
+  
+    /// Cleanup function
+    return () => {
+      isMounted = false; // Indicate component is unmounting
+      // Perform any cleanup for Firebase if needed
+      off(roomsRef); // Assuming off is a cleanup function
+      console.log("Cleanup performed");
+    };
+  }, []); // Ensure this effect is only run once on mount and cleanup on unmount
+  
 
   const getRooms = () => {
     // Call getDataRealtime with the correct parameters
@@ -79,9 +72,6 @@ const Home = ({navigation}) => {
     if (val) {
       const keys = Object.keys(val);
       const data = keys.map((key) => val[key]);
-      //temporary location
-    console.log(`should be calling getKeysBalance next`);
-    getKeysBalance(contractAddress);
       setRooms(() => data);
     }
   };
@@ -104,6 +94,12 @@ const Home = ({navigation}) => {
       </TouchableOpacity>
     );
   };
+
+  // Function to handle button press
+  const handlePressEthers = async () => {
+    console.log("Ethers button pressed");
+    await initializeEthers(); // Call your ethers function
+};
 
   const handleItemClicked = (room) => async () => {
     setRoomDetail(room);
@@ -194,6 +190,9 @@ const Home = ({navigation}) => {
           <Text style={styles.startRoomTxt}>Start a Room</Text>
         </TouchableOpacity>
       </View>
+        <TouchableOpacity style={styles.button} onPress={handlePressEthers}>
+            <Text style={styles.buttonText}>Run Ethers Functionality</Text>
+         </TouchableOpacity>
     </View>
   );
 };
@@ -203,6 +202,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1EFE3',
     flex: 1,
     position: 'relative',
+  },
+  button: {
+    position: 'absolute',
+    bottom: 50,
+    backgroundColor: 'blue',
+    padding: 20,
+    borderRadius: 5,
+  },
+  buttonText: {
+      color: 'white',
+      fontSize: 16,
   },
   room: {
     backgroundColor: '#fff',
