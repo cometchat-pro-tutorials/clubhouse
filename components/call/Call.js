@@ -22,6 +22,7 @@ const JoinCall = ({route, navigation}) => {
         try {
           // Get logged in user to create authToken for Direct Call
           let loggedInUser = await CometChat.getLoggedinUser();
+          console.log("loggedInUser details: ",loggedInUser);
           let authToken = loggedInUser.getAuthToken();
           console.log("the authToken for Direct Call: ", authToken);
           let sessionID = room.id;
@@ -41,7 +42,7 @@ const JoinCall = ({route, navigation}) => {
           startCall();
           
            // Assuming you have the current user's UID
-           const currentUserUID = user.id; 
+           const currentUserUID = loggedInUser.getUid(); 
            const path = `rooms/${room.id}/speakers/${currentUserUID}`;
 
            const roomData = await getFirebaseData('rooms',sessionID);
@@ -50,7 +51,7 @@ const JoinCall = ({route, navigation}) => {
             const speakerData = roomData.speakers[currentUserUID];
             console.log("Speaker Data: ",speakerData);
             if (!speakerData) {
-              console.error(`Speaker with UID ${currentUserUID} not found.`);
+              console.error(`Current Speaker with UID ${currentUserUID} not found.`);
               return;
             }
           }
@@ -80,6 +81,7 @@ const JoinCall = ({route, navigation}) => {
                 .showMuteAudioButton(true) // This hides the Mute Audio Button
                 // Include other settings as required for your call setup
                 .build();
+              console.log("Call settings to enable audio mute button", callSettings);
               setCallSettings(() => callSettings);
              }
            });
@@ -100,6 +102,7 @@ const JoinCall = ({route, navigation}) => {
     const switchCameraButton = false;
     const switchToVideoCallButton = false;
     const pauseVideoButton = false;
+    const muteAudioButton = false;
     const callListener = new CometChatCalls.OngoingCallListener({
       onUserJoined: user => {
         console.log("user joined:", user);
@@ -136,6 +139,7 @@ const JoinCall = ({route, navigation}) => {
       .setCallEventListener(callListener)
       .showSwitchCameraButton(switchCameraButton)
       .showSwitchToVideoCallButton(switchToVideoCallButton)
+      .showMuteAudioButton(muteAudioButton)
       .showPauseVideoButton(pauseVideoButton)
       .build();
     
@@ -183,6 +187,7 @@ const JoinCall = ({route, navigation}) => {
     try {
       // Fetch the entire room data
       const roomData = await getFirebaseData('rooms', roomId);
+      console.log(`Speaker with UID ${participantUid} being handled.`);
       if (roomData && roomData.speakers) {
         const speakerData = roomData.speakers[participantUid];
         if (!speakerData) {

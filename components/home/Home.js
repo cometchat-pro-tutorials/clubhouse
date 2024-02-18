@@ -132,12 +132,13 @@ const Home = ({navigation}) => {
       
       // User is not a speaker yet, add them
       let newExpiryTimestamp = Date.now() + 30 * 60000;
+      let loggedInUser = await CometChat.getLoggedinUser();
 
       // Construct the path and payload for updating Firebase
       const updatePath = `rooms/${room.id}/speakers`;
       await updateFirebaseDatabase({
         key: updatePath,
-        id: user.id,
+        id: loggedInUser.getUid(),
         nestedKey: 'expiryTimestamp',
         payload: newExpiryTimestamp
       });
