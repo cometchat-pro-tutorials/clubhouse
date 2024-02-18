@@ -1,8 +1,9 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import {View, TouchableOpacity, StyleSheet, Text, Modal, FlatList } from 'react-native';
 import {CometChat} from '@cometchat/chat-sdk-react-native';
 import {CometChatCalls} from '@cometchat/calls-sdk-react-native';
-import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
+import {updateFirebaseDatabase, getFirebaseData, getDataRealtime} from '../../services/firebase';
+import Context from '../../context';
 
 const JoinCall = ({route, navigation}) => {
   console.log("Joining Call");
@@ -12,6 +13,8 @@ const JoinCall = ({route, navigation}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [currentActionType, setCurrentActionType] = useState(null);
+  const {user} = useContext(Context);
+ 
 
   useEffect(() => {
     const fetchAuthTokenAndStartCall = async () => {
@@ -36,8 +39,53 @@ const JoinCall = ({route, navigation}) => {
 
           // Start the call
           startCall();
+          
+           // Assuming you have the current user's UID
+           const currentUserUID = user.id; 
+           const path = `rooms/${room.id}/speakers/${currentUserUID}`;
+
+           const roomData = await getFirebaseData('rooms',sessionID);
+           console.log("Room Data: ",roomData);
+          if (roomData && roomData.speakers) {
+            const speakerData = roomData.speakers[currentUserUID];
+            console.log("Speaker Data: ",speakerData);
+            if (!speakerData) {
+              console.error(`Speaker with UID ${currentUserUID} not found.`);
+              return;
+            }
+          }
+    
+           // Set up the listener for the current user's expiryTimestamp
+           getDataRealtime('rooms/' + room.id + '/speakers', currentUserUID, (speakerData) => {
+             const currentTime = Date.now();
+             console.log(`Real-time data fetched for path ${path}: `, speakerData);
+             console.log(`Current time: ${currentTime}, Expiry Timestamp: ${speakerData.expiryTimestamp}`);
+           
+             if (currentTime > speakerData.expiryTimestamp) {
+               CometChatCalls.muteAudio(true);
+               console.log("Audio is muted due to expiry timestamp being in the past.");
+               let callSettings = new CometChatCalls.CallSettingsBuilder()
+                .enableDefaultLayout(true) // Keep or modify other settings as needed
+                .showMuteAudioButton(false) // This hides the Mute Audio Button
+                // Include other settings as required for your call setup
+                .build();
+              setCallSettings(() => callSettings);
+
+             } else {
+               // Logic for when the expiry timestamp is not past...
+               CometChatCalls.muteAudio(false);
+               console.log("Audio is not muted. Expiry timestamp is in the future.");
+               let callSettings = new CometChatCalls.CallSettingsBuilder()
+                .enableDefaultLayout(true) // Keep or modify other settings as needed
+                .showMuteAudioButton(true) // This hides the Mute Audio Button
+                // Include other settings as required for your call setup
+                .build();
+              setCallSettings(() => callSettings);
+             }
+           });
+
         } catch (error) {
-          console.error("Error in fetchAuthTokenAndStartCall: ", error);
+            console.error("Error in fetchAuthTokenAndStartCall: ", error);
         }
       }
     };
@@ -82,7 +130,7 @@ const JoinCall = ({route, navigation}) => {
       }
     });
 
-    const callSettings = new CometChatCalls.CallSettingsBuilder()
+    let callSettings = new CometChatCalls.CallSettingsBuilder()
       .enableDefaultLayout(defaultLayout)
       .setIsAudioOnlyCall(audioOnly)
       .setCallEventListener(callListener)
@@ -177,37 +225,6 @@ const JoinCall = ({route, navigation}) => {
       console.error("Error updating expiry timestamp:", error);
     }
   };
-
-  const checkAndMuteSpeakerIfNecessary = async (roomId, participantUid) => {
-    try {
-        const roomData = await getFirebaseData('rooms', roomId);
-        if (roomData && roomData.speakers && roomData.speakers[participantUid]) {
-            const speakerData = roomData.speakers[participantUid];
-            const currentTime = Date.now();
-            
-            // If expiryTimestamp is in the past, mute the speaker
-            if (currentTime > speakerData.expiryTimestamp) {
-                muteSpeaker(participantUid);
-                console.log(`Speaker ${participantUid} muted due to expired talk time.`);
-            }
-        } else {
-            console.error("Speaker or room data not found.");
-        }
-    } catch (error) {
-        console.error("Error checking speaker expiry timestamp:", error);
-    }
-  };
-
-  // Function to mute a speaker
-  const muteSpeaker = (participantUid) => {
-      // Implementation depends on how you manage call state and interactions.
-      // This might involve sending a command to the call or directly using CometChat's API to mute the user.
-      console.log(`Implement muting logic for speaker: ${participantUid}`);
-  };
-
-  
-  
-
 
   if (callSettings) {
     return (
