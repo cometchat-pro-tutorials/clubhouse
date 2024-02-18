@@ -13,6 +13,8 @@ const JoinCall = ({route, navigation}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [currentActionType, setCurrentActionType] = useState(null);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [showMuteButton, setShowMuteButton] = useState(false);
   const {user} = useContext(Context);
  
 
@@ -65,24 +67,13 @@ const JoinCall = ({route, navigation}) => {
              if (currentTime > speakerData.expiryTimestamp) {
                CometChatCalls.muteAudio(true);
                console.log("Audio is muted due to expiry timestamp being in the past.");
-               let callSettings = new CometChatCalls.CallSettingsBuilder()
-                .enableDefaultLayout(true) // Keep or modify other settings as needed
-                .showMuteAudioButton(false) // This hides the Mute Audio Button
-                // Include other settings as required for your call setup
-                .build();
-              setCallSettings(() => callSettings);
+               setShowMuteButton(false);
 
              } else {
                // Logic for when the expiry timestamp is not past...
                CometChatCalls.muteAudio(false);
                console.log("Audio is not muted. Expiry timestamp is in the future.");
-               let callSettings = new CometChatCalls.CallSettingsBuilder()
-                .enableDefaultLayout(true) // Keep or modify other settings as needed
-                .showMuteAudioButton(true) // This hides the Mute Audio Button
-                // Include other settings as required for your call setup
-                .build();
-              console.log("Call settings to enable audio mute button", callSettings);
-              setCallSettings(() => callSettings);
+               setShowMuteButton(true);
              }
            });
 
@@ -242,6 +233,18 @@ const JoinCall = ({route, navigation}) => {
                 <TouchableOpacity style={styles.button} onPress={onThumbsUp}>
                     <Text style={styles.buttonText}>Thumbs Up</Text>
                 </TouchableOpacity>
+                {showMuteButton && (
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => {
+                      const newMuteStatus = !isAudioMuted;
+                      CometChatCalls.muteAudio(newMuteStatus);
+                      setIsAudioMuted(newMuteStatus);
+                    }}
+                  >
+                    <Text style={styles.buttonText}>{isAudioMuted ? "Unmute" : "Mute"}</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.button} onPress={onThumbsDown}>
                     <Text style={styles.buttonText}>Thumbs Down</Text>
                 </TouchableOpacity>
