@@ -10,12 +10,18 @@ import {
 import {CometChat} from '@cometchat/chat-sdk-react-native';
 
 import {getRef, getDataRealtime, off} from '../../services/firebase';
+import {updateFirebaseDatabase, getFirebaseData} from '../../services/firebase';
 import {addNotification} from '../../services/notification';
 import {showMessageWithActions} from '../../services/ui';
+import "@ethersproject/shims"
+import { ethers } from 'ethers';
+import socialKeysABI from '../../abi/socialkey.json';
+import { initializeEthers } from '../web3/initializeEthers'; 
 
 import Add from '../../images/add.svg';
 
 import Context from '../../context';
+
 
 const Home = ({navigation}) => {
   const [rooms, setRooms] = useState();
@@ -25,11 +31,36 @@ const Home = ({navigation}) => {
   const {user, setRoomDetail} = useContext(Context);
 
   useEffect(() => {
-    getRooms();
-    return () => {
-      off(roomsRef);
+    let isMounted = true; // Flag to track mounted state
+
+  // Asynchronously initialize Firebase and ethers
+  const initialize = async () => {
+    if (isMounted) {
+      await initFirebase();
+    }
+  };
+  
+    // Function to initialize Firebase
+    const initFirebase = async () => {
+      try {
+        await getRooms(); // Assuming getRooms() returns a Promise
+        console.log("Firebase initialization completed");
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+      }
     };
-  }, []);
+
+    initialize();
+  
+    /// Cleanup function
+    return () => {
+      isMounted = false; // Indicate component is unmounting
+      // Perform any cleanup for Firebase if needed
+      off(roomsRef); // Assuming off is a cleanup function
+      console.log("Cleanup performed");
+    };
+  }, []); // Ensure this effect is only run once on mount and cleanup on unmount
+  
 
   const getRooms = () => {
     // Call getDataRealtime with the correct parameters
@@ -64,6 +95,12 @@ const Home = ({navigation}) => {
     );
   };
 
+  // Function to handle button press
+  const handlePressEthers = async () => {
+    console.log("Ethers button pressed");
+    await initializeEthers(); // Call your ethers function
+};
+
   const handleItemClicked = (room) => async () => {
     setRoomDetail(room);
     if (room.createdBy.email === user.email) {
@@ -88,8 +125,30 @@ const Home = ({navigation}) => {
 
   const joinRoom = async (room) => {
     await joinCometChatGroup(room);
+  
+    // Check if the user is already a speaker in the room
+    const roomData = await getFirebaseData('rooms', room.id);
+    if (roomData && roomData.speakers && !roomData.speakers[user.id]) {
+      
+      // User is not a speaker yet, add them
+      let newExpiryTimestamp = Date.now() + 30 * 60000;
+      let loggedInUser = await CometChat.getLoggedinUser();
+
+      // Construct the path and payload for updating Firebase
+      const updatePath = `rooms/${room.id}/speakers`;
+      await updateFirebaseDatabase({
+        key: updatePath,
+        id: loggedInUser.getUid(),
+        nestedKey: 'expiryTimestamp',
+        payload: newExpiryTimestamp
+      });
+  
+      console.log(`${user.fullname} added as a speaker to room: ${room.roomTitle}`);
+    }
+  
     navigation.navigate('Room Detail', {room});
   };
+  
 
   const joinCometChatGroup = async (room) => {
     const password = '';
@@ -132,6 +191,9 @@ const Home = ({navigation}) => {
           <Text style={styles.startRoomTxt}>Start a Room</Text>
         </TouchableOpacity>
       </View>
+        <TouchableOpacity style={styles.button} onPress={handlePressEthers}>
+            <Text style={styles.buttonText}>Run Ethers Functionality</Text>
+         </TouchableOpacity>
     </View>
   );
 };
@@ -141,6 +203,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1EFE3',
     flex: 1,
     position: 'relative',
+  },
+  button: {
+    position: 'absolute',
+    bottom: 50,
+    backgroundColor: 'blue',
+    padding: 20,
+    borderRadius: 5,
+  },
+  buttonText: {
+      color: 'white',
+      fontSize: 16,
   },
   room: {
     backgroundColor: '#fff',

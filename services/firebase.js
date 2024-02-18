@@ -33,6 +33,17 @@ const insertFirebaseDatabase = async ({ key, id, payload }) => {
   }
 };
 
+const updateFirebaseDatabase = async ({ key, id, nestedKey, payload }) => {
+  const fullPath = `${key}/${id}/${nestedKey}`;
+  try {
+    await databaseSet(databaseRef(database, fullPath), payload);
+    console.log("Firebase database updated successfully at path:", fullPath);
+  } catch (error) {
+    console.error("Error updating Firebase database at path:", fullPath, error);
+    throw error;
+  }
+};
+
 const getFirebaseData = async (key, id) => {
   try {
     console.log("Get Firebase Data for key:", key, "and id:", id);
@@ -118,6 +129,7 @@ const uploadFile = async ({ fileRef, blob, contentType, onError, onSuccess }) =>
 
 export {
   insertFirebaseDatabase,
+  updateFirebaseDatabase,
   getFirebaseData,
   getRef,
   getDataRealtime,
