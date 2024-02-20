@@ -17,6 +17,8 @@ import "@ethersproject/shims"
 import { ethers } from 'ethers';
 import socialKeysABI from '../../abi/socialkey.json';
 import { initializeEthers } from '../web3/initializeEthers'; 
+import * as particleAuth from '@particle-network/rn-auth';
+import { loginWithParticle } from '../../particle';
 
 import Add from '../../images/add.svg';
 
@@ -36,12 +38,27 @@ const Home = ({navigation}) => {
   // Asynchronously initialize Firebase and ethers
   const initialize = async () => {
     if (isMounted) {
-      await initFirebase();
+      await initParticleFirebase();
     }
   };
   
     // Function to initialize Firebase
-    const initFirebase = async () => {
+    const initParticleFirebase = async () => {
+      try {
+        const isLoggedIn = await particleAuth.isLogin();
+        if (!isLoggedIn) {
+          // Prompt user to log in
+          const particleResult = await loginWithParticle(email, password);
+          console.log(particleResult);
+        } else {
+          // User is already logged in, fetch their info
+          const userInfo = await particleAuth.getUserInfo();
+          console.log(userInfo);
+        }
+      } catch (error) {
+        console.error("Particle initialization failed:", error);
+      }
+    
       try {
         await getRooms(); // Assuming getRooms() returns a Promise
         console.log("Firebase initialization completed");
@@ -191,9 +208,9 @@ const Home = ({navigation}) => {
           <Text style={styles.startRoomTxt}>Start a Room</Text>
         </TouchableOpacity>
       </View>
-        <TouchableOpacity style={styles.button} onPress={handlePressEthers}>
+       {/* <TouchableOpacity style={styles.button} onPress={handlePressEthers}>
             <Text style={styles.buttonText}>Run Ethers Functionality</Text>
-         </TouchableOpacity>
+         </TouchableOpacity>*/}
     </View>
   );
 };
@@ -205,11 +222,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   button: {
-    position: 'absolute',
-    bottom: 50,
+    marginBottom: 20, // Add margin to separate it from the "Start a Room" button
     backgroundColor: 'blue',
     padding: 20,
     borderRadius: 5,
+    alignSelf: 'center', // This will center the button
   },
   buttonText: {
       color: 'white',

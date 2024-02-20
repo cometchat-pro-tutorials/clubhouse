@@ -85,11 +85,12 @@ const SignUp = () => {
         const particleResult = await registerWithParticle(email, password);
         if (particleResult && particleResult.status) {
           // Proceed with Firebase registration
+          const publicAddress = await particleAuth.getAddress();
           try {
             const userCredential = await createUser(email, password);
             if (userCredential) {
               const id = userCredential._tokenResponse.localId; // Corrected to align with Firebase v9 syntax
-              createdAccount.current = buildCreatedAccount({id, fullname, email});
+              createdAccount.current = buildCreatedAccount({id, fullname, email, publicAddress});
               await insertFirebaseDatabase({
                 key: 'users/',
                 id,
@@ -146,10 +147,11 @@ const SignUp = () => {
     return true;
   };
 
-  const buildCreatedAccount = ({id, fullname, email}) => ({
+  const buildCreatedAccount = ({id, fullname, email, publicAddress}) => ({
     id,
     fullname,
     email,
+    publicAddress
   });
 
   const uploadUserAvatar = async () => {
