@@ -1,13 +1,13 @@
-# How to build an audioroom app with React Native
-
-Read the full tutorial here: [**>> How to build an Audioroom App with React Native**](https://www.cometchat.com/tutorials/#)
+# How to build an audioroom app - Podium with React Native
 
 ## Technology
 
 This demo uses:
 
-- @cometchat-pro/react-native-calls
-- @cometchat-pro/react-native-chat
+- @cometchat/calls-sdk-react-native,
+- @cometchat/chat-sdk-react-native,
+- @ethersproject/shims,
+- @particle-network/rn-auth,
 - @react-native-async-storage/async-storage,
 - @react-native-community/cli,
 - @react-native-picker/picker,
@@ -16,6 +16,7 @@ This demo uses:
 - @react-navigation/native,
 - @react-navigation/stack,
 - emoji-mart-nativebeta,
+- ethers,
 - firebase,
 - react-native-autolink,
 - react-native-document-picker,
@@ -53,7 +54,7 @@ To run the demo follow these steps:
 4. From the Quick Start copy the **APP_ID, APP_REGION and AUTH_KEY**. These will be used later.
 5. Also copy the **REST_API_KEY** from the API & Auth Key tab.
 6. Navigate to the Users tab, and delete all the default users and groups leaving it clean **(very important)**.
-7. Download the repository [here](https://github.com/hieptl/club-house/archive/main.zip) or by running `git clone https://github.com/hieptl/club-house.git` and open it in a code editor.
+7. Download the repository by running `https://github.com/jomarip/podium.git` and open it in a code editor.
 8. [Head to Firebase and create a new project](https://console.firebase.google.com)
 9. Create a file called **env.js** in the root folder of your project.
 10. Import and inject your secret keys in the **env.js** file containing your CometChat and Firebase in this manner.
@@ -76,23 +77,20 @@ export const cometChatConfig = {
   cometChatAuthKey: xxx - xxx - xxx - xxx - xxx - xxx - xxx - xxx,
   cometChatRestApiKey: xxx - xxx - xxx - xxx - xxx - xxx - xxx - xxx,
 };
+
+
+  export const particleInfoConfig = {
+    particleId: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxx",
+    clientKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  };
+  
 ```
 
 11. cd to your root folder and hit npm i --force to install the packages.
 12. Use node.js version14.17 or greater
-13. Run cd to the ios folder then run pod install to install the pods. Once pods are installed run cd .. to go back to the root folder.
-14. Run the app on iOS using npx react-native run-ios & on Android using npx react-native run-android
-15. Make sure to include env.js in your gitIgnore file from being exposed online.
-16. If you would like to test your application on IOS and you are using a Macbook - Apple Chip, you need to follow this link to configure your xcode and your ios project. [CometChat - Set up for IOS](https://prodocs.cometchat.com/docs/ios-setup)
-17. If you would like to test your application on Android and you have to face with an issue related to ANDROIRD_ROOT_SDK. Please refer to this [link](https://stackoverflow.com/questions/27620262/sdk-location-not-found-define-location-with-sdk-dir-in-the-local-properties-fil) to get the solution.
+For running on android you will need an android device or emulator
+13. adb reverse tcp:8081 tcp:8081 (command to connect device)
+14. npx react-native run-android (to build the project - helps to have the adb running with attached device)
+15. npm start 
 
-Questions about running the demo? [Open an issue](https://github.com/hieptl/club-house/issues). We're here to help ✌️
 
-## Useful links
-
-- 🏠 [CometChat Homepage](https://app.cometchat.com/signup)
-- 🚀 [Create your free account](https://app.cometchat.com/apps)
-- 📚 [Documentation](https://www.cometchat.com/docs/home/welcome)
-- 👾 [GitHub](https://www.github.com/cometchat-pro)
-- 🔥 [Firebase](https://console.firebase.google.com)
-- 🔷 [React Native](https://reactnative.dev)
