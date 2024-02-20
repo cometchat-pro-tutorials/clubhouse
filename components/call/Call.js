@@ -4,6 +4,7 @@ import {CometChat} from '@cometchat/chat-sdk-react-native';
 import {CometChatCalls} from '@cometchat/calls-sdk-react-native';
 import {updateFirebaseDatabase, getFirebaseData, getDataRealtime} from '../../services/firebase';
 import Context from '../../context';
+import sendTransaction from '../web3/transactions.js';
 
 const JoinCall = ({route, navigation}) => {
   console.log("Joining Call");
@@ -149,8 +150,22 @@ const JoinCall = ({route, navigation}) => {
     console.log("Thumbs Down clicked");
     setCurrentActionType('thumbsDown');
     showParticipants();
-    // Handle the thumbs down action here
   };
+
+  const onCheer = () => {
+    console.log("Cheer clicked");
+    setCurrentActionType('cheer');
+    showParticipants();
+  };
+
+  const onBoo = () => {
+    console.log("Boo clicked");
+    setCurrentActionType('boo');
+    showParticipants();
+   
+  };
+
+  
 
   const fetchCallParticipants = async () => {
     const groupId = room.id; // Assuming 'room.id' is your group ID
@@ -185,6 +200,82 @@ const JoinCall = ({route, navigation}) => {
           console.error(`Speaker with UID ${participantUid} not found.`);
           return;
         }
+        
+          // For actions that require transaction
+        if (actionType === 'cheer' || actionType === 'boo') {
+          const userData = await getFirebaseData('users', user.id);
+          let amount = "0.001";
+          await sendTransaction(userData.publicAddress, amount);
+          if (!userData || !userData.publicAddress) {
+            console.error(`User data or public address for UID ${user.id} not found.`);
+            return;
+          }
+        }
+        const currentTime = Date.now();
+        let newExpiryTimestamp = speakerData.expiryTimestamp;
+        
+        if (actionType === 'thumbsUp') {
+          // Check if expiryTimestamp is in the past
+          if (newExpiryTimestamp < currentTime) {
+            newExpiryTimestamp = currentTime; // Start from current time if past
+          }
+          newExpiryTimestamp += 5 * 1000; // Add 5 seconds
+        } else if (actionType === 'thumbsDown') {
+          // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
+          const timeDifference = speakerData.expiryTimestamp - currentTime;
+          const reductionAmount = Math.floor(Math.min(timeDifference * 0.02), 1  * 1000); // 1 second or 2%, rounded down
+          newExpiryTimestamp -= reductionAmount;
+        } else if (actionType === 'cheer'){
+            if (newExpiryTimestamp < currentTime) {
+              newExpiryTimestamp = currentTime; // Start from current time if past
+            }
+            newExpiryTimestamp += 5 * 60 * 1000; // Add 5 minutes
+
+        } else if (actionType === 'boo'){         
+          // Calculate time difference and reduce by 1 minute or 20% of the difference, whichever is smaller
+          const timeDifference = speakerData.expiryTimestamp - currentTime;
+          const reductionAmount = Math.floor(Math.min(timeDifference * 0.2), 1 * 60 * 1000); // 1 minute or 20%, rounded down
+          newExpiryTimestamp -= reductionAmount;
+
+        }else {
+          console.error("Invalid actionType:", actionType);
+          return;
+        }
+        
+        // Update the expiryTimestamp in the database
+        await updateFirebaseDatabase({
+          key: 'rooms/' + roomId + '/speakers',
+          id: participantUid,
+          nestedKey: 'expiryTimestamp',
+          payload: newExpiryTimestamp
+        });
+        
+        console.log("Expiry timestamp updated for speaker:", participantUid, "to", newExpiryTimestamp);
+      } else {
+        console.error("Room data not found or missing speakers.");
+      }
+    } catch (error) {
+      console.error("Error updating expiry timestamp:", error);
+    }
+  };
+
+  const handleTipParticipantPress = async (roomId, participantUid, actionType) => {
+    try {
+      // Fetch the entire room data
+      const roomData = await getFirebaseData('rooms', roomId);
+      console.log(`Speaker with UID ${participantUid} being handled.`);
+      if (roomData && roomData.speakers) {
+        const speakerData = roomData.speakers[participantUid];
+        if (!speakerData) {
+          console.error(`Speaker with UID ${participantUid} not found.`);
+          return;
+        }
+
+        // Assume getFirebaseData can also fetch user details including publicAddress
+        const userData = await getFirebaseData('users', user.id);
+        const publicAddress = userData.publicAddress; // Adjust according to your data structure
+
+        await sendTransaction(publicAddress, "0.001");
         
         const currentTime = Date.now();
         let newExpiryTimestamp = speakerData.expiryTimestamp;
@@ -231,7 +322,10 @@ const JoinCall = ({route, navigation}) => {
             <View style={styles.buttonContainer}>
                 {/* Replace onPress with fetching participants and showing modal */}
                 <TouchableOpacity style={styles.button} onPress={onThumbsUp}>
-                    <Text style={styles.buttonText}>Thumbs Up</Text>
+                    <Text style={styles.buttonText}>Up</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={onCheer}>
+                    <Text style={styles.buttonText}>Cheer Up</Text>
                 </TouchableOpacity>
                 {showMuteButton && (
                   <TouchableOpacity
@@ -245,8 +339,11 @@ const JoinCall = ({route, navigation}) => {
                     <Text style={styles.buttonText}>{isAudioMuted ? "Unmute" : "Mute"}</Text>
                   </TouchableOpacity>
                 )}
+                 <TouchableOpacity style={styles.button} onPress={onBoo}>
+                    <Text style={styles.buttonText}>BOO</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.button} onPress={onThumbsDown}>
-                    <Text style={styles.buttonText}>Thumbs Down</Text>
+                    <Text style={styles.buttonText}>Down</Text>
                 </TouchableOpacity>
             </View>
             {/* Modal to display participants */}
@@ -288,6 +385,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
+    backgroundColor: '#000'
   },
   callContainer: {
     flex: 0.8, // 80% of the screen for the call
@@ -297,7 +395,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0', // Light grey background for buttons
+    backgroundColor: '#000', // Light grey background for buttons
   },
   button: {
     backgroundColor: '#007bff', // Bootstrap primary button color

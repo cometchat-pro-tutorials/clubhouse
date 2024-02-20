@@ -12,11 +12,11 @@ import {
 } from '@particle-network/rn-auth';
 import * as particleAuth from '@particle-network/rn-auth';
 
-// Particle configuration
-const particleConfig = {
-  particleId: particleInfoConfig.apiKey,
-  clientKey: particleInfoConfig.clientKey,
-};
+// Get your project id and client from dashboard,  
+// https://dashboard.particle.network/
+ParticleInfo.projectId = particleInfoConfig.apiKey; // your project id
+ParticleInfo.clientKey = particleInfoConfig.clientKey; // your client key 
+
 
 // Initialize Particle
 const chainInfo = Avalanche;
